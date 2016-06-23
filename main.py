@@ -1,6 +1,7 @@
 from kivy.adapters.listadapter import ListAdapter
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, ReferenceListProperty
 from kivy.vector import Vector
@@ -9,6 +10,7 @@ from kivy.uix.relativelayout import *
 from kivy.uix.label import *
 from kivy.uix.listview import ListView, ListItemButton
 from kivy.core.window import Window
+from kivy.uix.button import Button
 
 import xml.etree.ElementTree as etree
 
@@ -21,10 +23,32 @@ for el in fullMapTree.getiterator():
         parent = parentMap.get(el)
         if parent is not None:
             parent.remove(el)
-selectedParent = fullMapTree.getroot()[0][2] # parent of currently selected node
+selectedParent = fullMapTree.getroot()[0] # parent of currently selected node
 selectedIndex = 0  # currently selected node
-selectedIndexList = [0, 0, 0]
+selectedIndexList = [0, 0]
 # print [El.get("TEXT") for El in mapRootNode]
+
+
+
+class PathListView(StackLayout):
+    """path list at top of window like ubuntu file manager"""
+    def __init__(self, **kwargs):
+        super(PathListView, self).__init__(**kwargs)
+        child = fullMapTree.getroot()
+        for i in selectedIndexList:
+            child = child[i]
+            btn = Button(text=child.get("TEXT"),
+                                   size_hint=(.15, 1),
+                                   text_size=self.size,
+                                   max_lines=3,
+                         halign='left',
+                         valign='middle')
+            btn.bind(size=btn.setter('text_size'))
+            self.add_widget(btn)
+
+
+
+
 
 class Node(TextInput):
     """node for mindmap view"""
@@ -81,7 +105,9 @@ class OverView(BoxLayout):
     def __init__(self, **kwargs):
         super(OverView, self).__init__(**kwargs)
 
-        self.add_widget(TreeView())
+        self.orientation = 'vertical'
+        self.add_widget(PathListView(size_hint=(1, .1)))
+        self.add_widget(TreeView(size_hint=(1, .9)))
 
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
@@ -89,8 +115,9 @@ class OverView(BoxLayout):
     def refresh_UI(self):
         """cant find a better way to do this"""
         self.clear_widgets()
-        print selectedParent, selectedIndexList
-        self.add_widget(TreeView())
+        print selectedParent.get('TEXT'), selectedIndexList
+        self.add_widget(PathListView(size_hint=(1, .1)))
+        self.add_widget(TreeView(size_hint=(1, .9)))
 
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
