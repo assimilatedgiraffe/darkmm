@@ -1,5 +1,14 @@
 #:kivy 1.0.9
 
+#Node for mind map view
+<Node@Button>:
+    size_hint: None, None
+    text_size: 150, None
+    halign: 'center'
+    size: self.texture_size
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+
 <MindMap>:
     canvas:
 #        Rectangle:

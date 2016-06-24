@@ -1,5 +1,6 @@
 from kivy.adapters.listadapter import ListAdapter
 from kivy.app import App
+from kivy.factory import Factory
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
@@ -25,13 +26,11 @@ for el in fullMapTree.getiterator():
         parent = parentMap.get(el)
         if parent is not None:
             parent.remove(el)
+
 selectedParent = fullMapTree.getroot()[0]  # parent of currently selected node
 selectedIndex = 0  # currently selected node
 selectedIndexList = [0, 0]
-
-
-# print [El.get("TEXT") for El in mapRootNode]
-
+inTreeView = False
 
 
 class PathListView(StackLayout):
@@ -52,15 +51,15 @@ class PathListView(StackLayout):
             self.add_widget(btn)
 
 
-class Node(Button):
-    """node for mindmap view"""
-
-    def __init__(self, **kwargs):
-        super(Node, self).__init__(**kwargs)
-        # self.size = (100, 100)
-        self.size_hint = (None, None)
-        self.text_size = (150, None)
-        self.halign = 'center'
+# class Node(Button):
+#     """node for mindmap view"""
+#
+#     def __init__(self, **kwargs):
+#         super(Node, self).__init__(**kwargs)
+#         # self.size = (100, 100)
+#         self.size_hint = (None, None)
+#         self.text_size = (150, None)
+#         self.halign = 'center'
 
 
 class MindMapView(RelativeLayout):
@@ -69,23 +68,27 @@ class MindMapView(RelativeLayout):
     def __init__(self, **kwargs):
         super(MindMapView, self).__init__(**kwargs)
         # selected node in centre
-        center_node = Node()
-        center_node.text = selectedParent[selectedIndexList[-1]].get('TEXT')
-        center_node.size = center_node.texture_size
+        center_node = Factory.Node()
+        center_node.text = selectedParent.get('TEXT')
         center_node.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
         self.add_widget(center_node)
 
         # circle of child nodes
-        n_nodes = len(selectedParent[selectedIndexList[-1]])
-        for i, child in enumerate(selectedParent[selectedIndexList[-1]]):
-            node = Node()
+        for i, child in enumerate(selectedParent):
+            node = Factory.Node()
             node.text = child.get('TEXT')
-            node.size = node.texture_size
+
             # calculate pos
             r = .3
-            w = i * (2 * pi / n_nodes)
-            x, y = (r * cos(w)) + .5, (r * sin(w)) + .5
+            w = i * (2 * pi / len(selectedParent))
+            x, y = (r * sin(w)) + .5, (r * cos(w)) + .5
             node.pos_hint = {'center_x': x, 'center_y': y}
+
+            if i == selectedIndexList[-1]:
+                node.state = 'down'
+            else:
+                node.state = 'normal'
+
             self.add_widget(node)
 
 
@@ -127,24 +130,32 @@ class OverView(BoxLayout):
 
         self.orientation = 'vertical'
         self.add_widget(PathListView(size_hint=(1, .1)))
-        self.add_widget(MindMapView(size_hint=(1, .9)))
+        if inTreeView:
+            self.add_widget(TreeView(size_hint=(1, .9)))
+        else:
+            self.add_widget(MindMapView(size_hint=(1, .9)))
 
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
+        self.ctrlPressed = False
 
     def refresh_UI(self):
-        """cant find a better way to do this"""
+        """TODO: find a better way to do this"""
         self.clear_widgets()
         print selectedParent.get('TEXT'), selectedIndexList
         self.add_widget(PathListView(size_hint=(1, .1)))
-        self.add_widget(TreeView(size_hint=(1, .9)))
+        if inTreeView:
+            self.add_widget(TreeView(size_hint=(1, .9)))
+        else:
+            self.add_widget(MindMapView(size_hint=(1, .9)))
 
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
         self._keyboard = None
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        global selectedParent, selectedIndexList
+        global selectedParent, selectedIndexList, inTreeView
+        print keycode, modifiers
         if keycode[1] == 'j':
             if len(selectedParent) > selectedIndexList[-1] + 1:
                 selectedIndexList[-1] += 1
@@ -167,6 +178,12 @@ class OverView(BoxLayout):
                 selectedParent = selectedParent[selectedIndexList[-1]]
                 selectedIndexList.append(0)
                 self.refresh_UI()
+        elif keycode[1] == 'tab' and 'ctrl' in modifiers:
+            if inTreeView:
+                inTreeView = False
+            else:
+                inTreeView = True
+            self.refresh_UI()
         return True
 
 
