@@ -7,6 +7,15 @@
     halign: 'center'
     size: self.texture_size
     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    background_normal: ''
+    background_color: [1,1,1,0] if self.state == 'normal' else [1,1,1,1]
+#    text_color: [1,1,1,1]
+    canvas.before:
+        Color:
+            rgb: (.5,.5,.5)
+        Ellipse:
+            pos: self.pos[0] - 10, self.pos[1] - 10
+            size: self.size[0] + 20, self.size[1] + 20
 
 
 <MindMap>:

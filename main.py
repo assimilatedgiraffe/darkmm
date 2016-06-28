@@ -76,7 +76,7 @@ class MindMapView(RelativeLayout):
         # circle of child nodes
         for i, child in enumerate(selectedParent):
             node = Factory.Node()
-            node.text = child.get('TEXT')
+            node.text = child.get('TEXT')[:60]
 
             # calculate pos
             r = .3
@@ -89,6 +89,27 @@ class MindMapView(RelativeLayout):
             else:
                 node.state = 'normal'
 
+            # recursive circles
+            max_depth = 2
+
+            def draw_children(parent, parentNode, depth=1):
+                if depth <= max_depth:
+                    for i, child in enumerate(parent):
+                        node = Factory.Node()
+                        # node.text = child.get('TEXT')[:50]
+
+                        # calculate pos
+                        r = .11 / depth
+                        w2 = (w - (pi/8)) + (i * ((pi/2) / len(parent)))
+                        x, y = (r * sin(w2)) + parentNode.pos_hint['center_x'], \
+                               (r * cos(w2)) + parentNode.pos_hint['center_y']
+                        node.pos_hint = {'center_x': x, 'center_y': y}
+                        # font_size = abs(int(20 - (depth*3)))
+                        # node.text_size = 4 / depth, 4 / depth
+                        draw_children(child, node, depth + 1)
+                        self.add_widget(node)
+
+            draw_children(child, node)
             self.add_widget(node)
 
 
@@ -160,10 +181,10 @@ class OverView(BoxLayout):
             if len(selectedParent) > selectedIndexList[-1] + 1:
                 selectedIndexList[-1] += 1
                 self.refresh_UI()
-            #            index = self.main_list_adapter.selection[0].index + 1
-            #            new_selection = self.main_list_adapter.get_view(index)
-            #            if new_selection and not new_selection.is_selected:
-            #                new_selection.trigger_action(duration=0)
+                #            index = self.main_list_adapter.selection[0].index + 1
+                #            new_selection = self.main_list_adapter.get_view(index)
+                #            if new_selection and not new_selection.is_selected:
+                #                new_selection.trigger_action(duration=0)
         elif keycode[1] == 'k':
             if selectedIndexList[-1] > 0:
                 selectedIndexList[-1] -= 1
